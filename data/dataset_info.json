@@ -1,4 +1,40 @@
 {
+  "enhi_testdata": {
+    "file_name": "enhi_testdata.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+
+  "ente_testdata": {
+    "file_name": "ente_testdata.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+
+  "enta_testdata": {
+    "file_name": "enta_testdata.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+
+  "engu_testdata": {
+    "file_name": "engu_testdata.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+
   "DA_data": {
     "file_name": "DA_data.json",
     "columns": {

@@ -28,7 +28,10 @@ def construct_json(filename):
         # Construct the instruction
         instruction = f"{instruction_template}\ \n Original sentence: {row['original']}\n translation: {row['translation']}"
 
-        output_text = f"The predicted DA score is : {row['mean']}"
+
+        #output_text = f"The predicted DA score is : {row['mean']}"
+        output_text = f"The predicted DA score is : {row['mean']:.2f}"
+
         # Construct the JSON object
         json_dict = {
             "instruction": instruction,
@@ -42,6 +45,6 @@ def construct_json(filename):
     return json.dumps(json_list, ensure_ascii=False, indent=2)
 
 # Save the JSON output to a file
-json_output = construct_json('train.enta.df.short.tsv')
-with open('DA_data.json', 'w', encoding='utf-8') as f:
+json_output = construct_json('dataset/enmr_corrected_data.tsv')
+with open('json_created/enmr_testdata.json', 'w', encoding='utf-8') as f:
     f.write(json_output)
