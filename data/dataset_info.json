@@ -1,4 +1,13 @@
 {
+  "enta_testdata_with_ipt": {
+    "file_name": "qe_dataset/json_created/enta_testdata_with_ipt.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+
   "enhi_testdata": {
     "file_name": "enhi_testdata.json",
     "columns": {

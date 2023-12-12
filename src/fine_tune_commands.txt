@@ -11,11 +11,12 @@ CUDA_VISIBLE_DEVICES=0 python src/train_bash.py \
     --stage sft \
     --model_name_or_path meta-llama/Llama-2-13b-hf \
     --do_predict \
-    --dataset enta_testdata \
+    --dataset enta_testdata_with_ipt \
     --template default \
     --finetuning_type lora \
     --output_dir data/qe_dataset/output_model/testset_outputs \
     --per_device_eval_batch_size 4 \
+    --max_samples 100 \
     --predict_with_generate \
     --fp16
 
