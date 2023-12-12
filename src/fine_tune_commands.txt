@@ -1,6 +1,47 @@
+####Export the following path in cmd#####
+#Setting path for huggingface
+export HF_HOME="/vol/research/Archchana/.cache/huggingface/"
+
+
+######## Zero-shot prediction##############
+#remove - checkpoint argument unless you are loading a model
+#removed --max_samples 100 \
+
 CUDA_VISIBLE_DEVICES=0 python src/train_bash.py \
     --stage sft \
-    --model_name_or_path meta-llama/Llama-2-13b-hf
+    --model_name_or_path meta-llama/Llama-2-13b-hf \
+    --do_predict \
+    --dataset enta_testdata \
+    --template default \
+    --finetuning_type lora \
+    --output_dir data/qe_dataset/output_model/testset_outputs \
+    --per_device_eval_batch_size 4 \
+    --predict_with_generate \
+    --fp16
+
+
+
+    #########  PREDICTION ORIGINAL COMMAND  ################
+
+    CUDA_VISIBLE_DEVICES=0 python src/train_bash.py \
+    --stage sft \
+    --model_name_or_path path_to_llama_model \
+    --do_predict \
+    --dataset alpaca_gpt4_en \
+    --template default \
+    --finetuning_type lora \
+    --checkpoint_dir path_to_checkpoint \
+    --output_dir path_to_predict_result \
+    --per_device_eval_batch_size 8 \
+    --max_samples 100 \
+    --predict_with_generate \
+    --fp16
+
+    ########### Fine Tuning ##############
+
+    CUDA_VISIBLE_DEVICES=0 python src/train_bash.py \
+    --stage sft \
+    --model_name_or_path meta-llama/Llama-2-13b-hf \
     --do_train \
     --dataset DA_data \
     --template llama2 \
@@ -20,12 +61,13 @@ CUDA_VISIBLE_DEVICES=0 python src/train_bash.py \
 
 
 
-    -----------------------------------------------
+ ########### Fine Tuning ORGINAL  ##############
+
     CUDA_VISIBLE_DEVICES=0 python src/train_bash.py \
     --stage sft \
     --model_name_or_path path_to_llama_model \
     --do_train \
-    --dataset alpaca_gpt4_en \
+    --dataset DA_data \
     --template default \
     --finetuning_type lora \
     --lora_target q_proj,v_proj \
