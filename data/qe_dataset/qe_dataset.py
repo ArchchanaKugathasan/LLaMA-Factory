@@ -22,7 +22,7 @@ def construct_json(filename):
     json_list = []
 
     # Add your custom instruction text here
-    instruction_template = "You need to Evaluate the machine translation output, with scores ranging from 0 to 100. Scores of 0-30 indicate that the translation is mostly unintelligible, either completely inaccurate or containing only some keywords. Scores of 31-50 suggest partial intelligibility, with some keywords present but numerous grammatical errors. A score between 51-70 means the translation is generally clear, with most keywords included and only minor grammatical errors. Scores of 71-90 indicate the translation is clear and intelligible, with all keywords present and only minor non-grammatical issues. Finally, scores of 91-100 reflect a perfect or near-perfect translation, accurately conveying the source meaning without errors. The evaluation criteria focus on two main aspects: Adequacy (how much information is conveyed) and Fluency (how grammatically correct the translation is).Predict only the predicted DA score baed on the Original and translation given below. "
+    instruction_template = "You need to Evaluate the machine translation output, with scores ranging from 0 to 100. Scores of 0-30 indicate that the translation is mostly unintelligible, either completely inaccurate or containing only some keywords. Scores of 31-50 suggest partial intelligibility, with some keywords present but numerous grammatical errors. A score between 51-70 means the translation is generally clear, with most keywords included and only minor grammatical errors. Scores of 71-90 indicate the translation is clear and intelligible, with all keywords present and only minor non-grammatical issues. Finally, scores of 91-100 reflect a perfect or near-perfect translation, accurately conveying the source meaning without errors. The evaluation criteria focus on two main aspects: Adequacy (how much information is conveyed) and Fluency (how grammatically correct the translation is).Predict only the DA score based on the Original and translation given below. Predict the DA score value, not a range "
     
     for i, row in df.iterrows():
         # Construct the instruction
@@ -46,5 +46,5 @@ def construct_json(filename):
 
 # Save the JSON output to a file
 json_output = construct_json('dataset/test.enta.df.short.tsv')
-with open('json_created/enta_testdata_with_ipt.json', 'w', encoding='utf-8') as f:
+with open('json_created/enta_testdata3.json', 'w', encoding='utf-8') as f:
     f.write(json_output)

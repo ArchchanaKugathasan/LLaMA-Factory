@@ -1,0 +1,86 @@
+####Export the following path in cmd#####
+#Setting path for huggingface
+export HF_HOME="/vol/research/Archchana/my_huggingF_models"
+export TRANSFORMERS_CACHE=/vol/research/Archchana/my_huggingF_models
+
+
+######## Zero-shot prediction##############
+#remove - checkpoint argument unless you are loading a model
+#removed --max_samples 100 \
+
+CUDA_VISIBLE_DEVICES=0 python src/train_bash.py \
+    --stage sft \
+    --model_name_or_path meta-llama/Llama-2-13b-chat-hf \
+    --do_predict \
+    --dataset sien_overlap_data \
+    --template default \
+    --finetuning_type lora \
+    --output_dir data/overlap_dataset/wmt22_dataset/output_overlap/prompt1 \
+    --per_device_eval_batch_size 2 \
+    --max_samples 10 \
+    --predict_with_generate \
+    --fp16
+
+
+
+    #########  PREDICTION ORIGINAL COMMAND  ################
+
+    CUDA_VISIBLE_DEVICES=0 python src/train_bash.py \
+    --stage sft \
+    --model_name_or_path path_to_llama_model \
+    --do_predict \
+    --dataset alpaca_gpt4_en \
+    --template default \
+    --finetuning_type lora \
+    --checkpoint_dir path_to_checkpoint \
+    --output_dir path_to_predict_result \
+    --per_device_eval_batch_size 8 \
+    --max_samples 100 \
+    --predict_with_generate \
+    --fp16
+
+    ########### Fine Tuning ##############
+
+    CUDA_VISIBLE_DEVICES=0 python src/train_bash.py \
+    --stage sft \
+    --model_name_or_path meta-llama/Llama-2-13b-hf \
+    --do_train \
+    --dataset DA_data \
+    --template llama2 \
+    --finetuning_type lora \
+    --lora_target q_proj,v_proj \
+    --output_dir data/qe_dataset/output_model \
+    --overwrite_cache \
+    --per_device_train_batch_size 4 \
+    --gradient_accumulation_steps 4 \
+    --lr_scheduler_type cosine \
+    --logging_steps 10 \
+    --save_steps 1000 \
+    --learning_rate 5e-5 \
+    --num_train_epochs 3.0 \
+    --plot_loss \
+    --fp16
+
+
+
+ ########### Fine Tuning ORGINAL  ##############
+
+    CUDA_VISIBLE_DEVICES=0 python src/train_bash.py \
+    --stage sft \
+    --model_name_or_path path_to_llama_model \
+    --do_train \
+    --dataset DA_data \
+    --template default \
+    --finetuning_type lora \
+    --lora_target q_proj,v_proj \
+    --output_dir path_to_sft_checkpoint \
+    --overwrite_cache \
+    --per_device_train_batch_size 4 \
+    --gradient_accumulation_steps 4 \
+    --lr_scheduler_type cosine \
+    --logging_steps 10 \
+    --save_steps 1000 \
+    --learning_rate 5e-5 \
+    --num_train_epochs 3.0 \
+    --plot_loss \
+    --fp16

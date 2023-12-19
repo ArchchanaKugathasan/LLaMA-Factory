@@ -1,4 +1,35 @@
 {
+  
+  "enzh_overlap_data": {
+    "file_name": "overlap_dataset/wmt22_dataset/json_created/enzh_overlap_data.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output",
+      "history": "history"
+    }
+  },
+
+  "sien_overlap_data": {
+    "file_name": "overlap_dataset/wmt22_dataset/json_created/sien_overlap_data.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output",
+      "history": "history"
+    }
+  },
+
+  "enta_testdata3": {
+    "file_name": "qe_dataset/json_created/enta_testdata3.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+
+
   "enta_testdata_with_ipt": {
     "file_name": "qe_dataset/json_created/enta_testdata_with_ipt.json",
     "columns": {
