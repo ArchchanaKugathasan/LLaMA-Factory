@@ -1,33 +1,40 @@
 # coding=utf-8
 # Converts the Qwen models in the same format as LLaMA2.
 # Usage: python llamafy_qwen.py --input_dir input --output_dir output --shard_size 10GB
+# Converted model: https://huggingface.co/hiyouga/Qwen-14B-Chat-LLaMAfied
 
-import os
-import fire
 import json
-import torch
+import os
 from collections import OrderedDict
+from typing import Any, Dict, Optional
+
+import fire
+import torch
 from safetensors import safe_open
-from transformers.modeling_utils import shard_checkpoint, WEIGHTS_NAME, WEIGHTS_INDEX_NAME
+from safetensors.torch import save_file
+from tqdm import tqdm
+from transformers.modeling_utils import (
+    SAFE_WEIGHTS_INDEX_NAME,
+    SAFE_WEIGHTS_NAME,
+    WEIGHTS_INDEX_NAME,
+    WEIGHTS_NAME,
+    shard_checkpoint,
+)
 from transformers.utils import check_min_version
-from typing import Any, Dict
+
 
 try:
     check_min_version("4.34.0")
-except:
+except Exception:
     raise ValueError("Please upgrade `transformers` to 4.34.0")
 
 
 CONFIG_NAME = "config.json"
 
 
-def save_weight(
-    input_dir: str,
-    output_dir: str,
-    shard_size: str
-) -> str:
+def save_weight(input_dir: str, output_dir: str, shard_size: str, save_safetensors: bool) -> str:
     qwen_state_dict: Dict[str, torch.Tensor] = OrderedDict()
-    for filepath in os.listdir(input_dir):
+    for filepath in tqdm(os.listdir(input_dir), desc="Load weights"):
         if os.path.isfile(os.path.join(input_dir, filepath)) and filepath.endswith(".safetensors"):
             with safe_open(os.path.join(input_dir, filepath), framework="pt", device="cpu") as f:
                 for key in f.keys():
@@ -35,7 +42,7 @@ def save_weight(
 
     llama2_state_dict: Dict[str, torch.Tensor] = OrderedDict()
     torch_dtype = None
-    for key, value in qwen_state_dict.items():
+    for key, value in tqdm(qwen_state_dict.items(), desc="Convert format"):
         if torch_dtype is None:
             torch_dtype = value.dtype
         if "wte" in key:
@@ -47,13 +54,15 @@ def save_weight(
             if "attn.c_attn" in key:
                 proj_size = value.size(0) // 3
                 llama2_state_dict[key.replace("attn.c_attn", "self_attn.q_proj")] = value[:proj_size, ...]
-                llama2_state_dict[key.replace("attn.c_attn", "self_attn.k_proj")] = value[proj_size:2*proj_size, ...]
-                llama2_state_dict[key.replace("attn.c_attn", "self_attn.v_proj")] = value[2*proj_size:, ...]
+                llama2_state_dict[key.replace("attn.c_attn", "self_attn.k_proj")] = value[
+                    proj_size : 2 * proj_size, ...
+                ]
+                llama2_state_dict[key.replace("attn.c_attn", "self_attn.v_proj")] = value[2 * proj_size :, ...]
             elif "attn.c_proj" in key:
                 llama2_state_dict[key.replace("attn.c_proj", "self_attn.o_proj")] = value
-                llama2_state_dict[key.replace("attn.c_proj.weight", "self_attn.o_proj.bias")] = (
-                    torch.zeros_like(value[:, 0]).squeeze()
-                )
+                llama2_state_dict[key.replace("attn.c_proj.weight", "self_attn.o_proj.bias")] = torch.zeros_like(
+                    value[:, 0]
+                ).squeeze()
             elif "ln_1" in key:
                 llama2_state_dict[key.replace("ln_1", "input_layernorm")] = value
             elif "ln_2" in key:
@@ -69,25 +78,27 @@ def save_weight(
             else:
                 raise KeyError("Unable to process key {}".format(key))
 
-    shards, index = shard_checkpoint(llama2_state_dict, max_shard_size=shard_size, weights_name=WEIGHTS_NAME)
-    for shard_file, shard in shards.items():
-        torch.save(shard, os.path.join(output_dir, shard_file))
+    weights_name = SAFE_WEIGHTS_NAME if save_safetensors else WEIGHTS_NAME
+    shards, index = shard_checkpoint(llama2_state_dict, max_shard_size=shard_size, weights_name=weights_name)
+
+    for shard_file, shard in tqdm(shards.items(), desc="Save weights"):
+        if save_safetensors:
+            save_file(shard, os.path.join(output_dir, shard_file), metadata={"format": "pt"})
+        else:
+            torch.save(shard, os.path.join(output_dir, shard_file))
 
     if index is None:
-        print("Model weights saved in {}".format(os.path.join(output_dir, WEIGHTS_NAME)))
+        print("Model weights saved in {}".format(os.path.join(output_dir, weights_name)))
     else:
-        with open(os.path.join(output_dir, WEIGHTS_INDEX_NAME), "w", encoding="utf-8") as f:
+        index_name = SAFE_WEIGHTS_INDEX_NAME if save_safetensors else WEIGHTS_INDEX_NAME
+        with open(os.path.join(output_dir, index_name), "w", encoding="utf-8") as f:
             json.dump(index, f, indent=2, sort_keys=True)
         print("Model weights saved in {}".format(output_dir))
 
     return str(torch_dtype).replace("torch.", "")
 
 
-def save_config(
-    input_dir: str,
-    output_dir: str,
-    torch_dtype: str
-):
+def save_config(input_dir: str, output_dir: str, torch_dtype: str):
     with open(os.path.join(input_dir, CONFIG_NAME), "r", encoding="utf-8") as f:
         qwen_config_dict: Dict[str, Any] = json.load(f)
 
@@ -117,18 +128,14 @@ def save_config(
     print("Model config saved in {}".format(os.path.join(output_dir, CONFIG_NAME)))
 
 
-def llamafy_qwen(
-    input_dir: str,
-    output_dir: str,
-    shard_size: str
-):
+def llamafy_qwen(input_dir: str, output_dir: str, shard_size: str, save_safetensors: Optional[bool] = False):
     try:
         os.makedirs(output_dir, exist_ok=False)
     except Exception as e:
         raise print("Output dir already exists", e)
 
-    torch_dtype = save_weight(input_dir, output_dir, shard_size)
-    save_config(input_dir, output_dir, torch_dtype)    
+    torch_dtype = save_weight(input_dir, output_dir, shard_size, save_safetensors)
+    save_config(input_dir, output_dir, torch_dtype)
 
 
 if __name__ == "__main__":
