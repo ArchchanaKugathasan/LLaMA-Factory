@@ -37,7 +37,7 @@ class Template:
         system: Optional[str] = None,
         tools: Optional[str] = None,
         cutoff_len: Optional[int] = 1_000_000,
-        reserved_label_len: Optional[int] = 16,
+        reserved_label_len: Optional[int] = 1,
     ) -> Tuple[List[int], List[int]]:
         r"""
         Returns a single pair of token ids representing prompt and response respectively.
@@ -57,7 +57,7 @@ class Template:
         system: Optional[str] = None,
         tools: Optional[str] = None,
         cutoff_len: Optional[int] = 1_000_000,
-        reserved_label_len: Optional[int] = 16,
+        reserved_label_len: Optional[int] = 1,
     ) -> Sequence[Tuple[List[int], List[int]]]:
         r"""
         Returns multiple pairs of token ids representing prompts and responses respectively.
@@ -117,9 +117,9 @@ class Template:
             elif isinstance(elem, dict):
                 token_ids += [tokenizer.convert_tokens_to_ids(elem.get("token"))]
             elif isinstance(elem, set):
-                if "bos_token" in elem and tokenizer.bos_token_id:
+                if "bos_token" in elem and tokenizer.bos_token_id is not None:
                     token_ids += [tokenizer.bos_token_id]
-                elif "eos_token" in elem and tokenizer.eos_token_id:
+                elif "eos_token" in elem and tokenizer.eos_token_id is not None:
                     token_ids += [tokenizer.eos_token_id]
             else:
                 raise ValueError("Input must be string, set[str] or dict[str, str], got {}".format(type(elem)))
@@ -144,10 +144,10 @@ class Template:
                 max_len=(cutoff_len - total_length),
                 reserved_label_len=reserved_label_len,
             )
-            encoded_messages[i] = encoded_messages[i][:max_source_len]
-            encoded_messages[i + 1] = encoded_messages[i + 1][:max_target_len]
-            total_length += len(encoded_messages[i]) + len(encoded_messages[i + 1])
-            encoded_pairs.append((encoded_messages[i], encoded_messages[i + 1]))
+            source_ids = encoded_messages[i][:max_source_len]
+            target_ids = encoded_messages[i + 1][:max_target_len]
+            total_length += len(source_ids) + len(target_ids)
+            encoded_pairs.append((source_ids, target_ids))
 
         return encoded_pairs
 
@@ -218,7 +218,7 @@ def register_template(
     default_user_formatter = StringFormatter(slots=["{{content}}"])
     default_assistant_formatter = StringFormatter(slots=["{{content}}"] + eos_slots)
     default_function_formatter = FunctionFormatter(slots=["Action: {{name}}\nAction Input: {{arguments}}"] + eos_slots)
-    default_tool_formatter = ToolFormatter(slots="default")
+    default_tool_formatter = ToolFormatter(tool_format="default")
     default_separator_formatter = EmptyFormatter()
     templates[name] = template_class(
         format_user=format_user or default_user_formatter,
@@ -339,7 +339,9 @@ register_template(
         slots=[{"token": "[gMASK]"}, {"token": "sop"}, {"token": "<|system|>"}, "\n", "{{content}}"]
     ),
     format_function=FunctionFormatter(slots=["{{name}}\n{{arguments}}"]),
-    format_observation=StringFormatter(slots=[{"token": "<|observation|>"}, "\n", "{{content}}"]),
+    format_observation=StringFormatter(
+        slots=[{"token": "<|observation|>"}, "\n", "{{content}}", {"token": "<|assistant|>"}]
+    ),
     default_system=(
         "You are ChatGLM3, a large language model trained by Zhipu.AI. "
         "Follow the user's instructions carefully. Respond using markdown."
@@ -357,6 +359,14 @@ register_template(
 
 
 register_template(
+    name="cpm",
+    format_user=StringFormatter(slots=["<用户>{{content}}<AI>"]),
+    format_system=StringFormatter(slots=[{"bos_token"}, "{{content}}"]),
+    force_system=True,
+)
+
+
+register_template(
     name="deepseek",
     format_user=StringFormatter(slots=["User: {{content}}\n\nAssistant:"]),
     format_system=StringFormatter(slots=[{"bos_token"}, "{{content}}"]),
@@ -366,7 +376,8 @@ register_template(
 
 register_template(
     name="deepseekcoder",
-    format_user=StringFormatter(slots=["### Instruction:\n{{content}}\n### Response:\n"]),
+    format_user=StringFormatter(slots=["### Instruction:\n{{content}}\n### Response:"]),
+    format_assistant=StringFormatter(slots=["\n", "{{content}}"]),
     format_separator=EmptyFormatter(slots=["\n", {"token": "<|EOT|>"}, "\n"]),
     default_system=(
         "You are an AI programming assistant, utilizing the Deepseek Coder model, "
@@ -464,7 +475,7 @@ register_template(
 
 register_template(
     name="orion",
-    format_user=StringFormatter(slots=["Human: {{content}}\n\nAssistant: </s>"]),
+    format_user=StringFormatter(slots=["Human: {{content}}\n\nAssistant: ", {"eos_token"}]),
     format_system=StringFormatter(slots=[{"bos_token"}, "{{content}}"]),
     force_system=True,
 )

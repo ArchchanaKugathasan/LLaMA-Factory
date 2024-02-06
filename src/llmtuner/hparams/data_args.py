@@ -7,6 +7,7 @@ class DataArguments:
     r"""
     Arguments pertaining to what data we are going to input our model for training and evaluation.
     """
+
     template: Optional[str] = field(
         default=None, metadata={"help": "Which template to use for constructing prompts in training and inference."}
     )
@@ -21,10 +22,10 @@ class DataArguments:
         default="train", metadata={"help": "Which dataset split to use for training and evaluation."}
     )
     cutoff_len: Optional[int] = field(
-        default=1024, metadata={"help": "The maximum length of the model inputs after tokenization."}
+        default=1024, metadata={"help": "The cutoff length of the model inputs after tokenization."}
     )
     reserved_label_len: Optional[int] = field(
-        default=1, metadata={"help": "The maximum length reserved for label after tokenization."}
+        default=1, metadata={"help": "The minimum cutoff length reserved for label after tokenization."}
     )
     train_on_prompt: Optional[bool] = field(
         default=False, metadata={"help": "Whether to disable the mask on the prompt or not."}
@@ -57,7 +58,7 @@ class DataArguments:
     ignore_pad_token_for_loss: Optional[bool] = field(
         default=True,
         metadata={
-            "help": "Whether to ignore the tokens corresponding to padded labels in the loss computation or not."
+            "help": "Whether or not to ignore the tokens corresponding to padded labels in the loss computation."
         },
     )
     val_size: Optional[float] = field(
